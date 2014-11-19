@@ -36,6 +36,12 @@ QOscMessage::QOscMessage(const QByteArray &data)
     while ((data.constData() + parsedBytes) && *(data.constData() + parsedBytes) == '\0')
         parsedBytes++;
 
+    // "Note: some older implementations of OSC may omit the OSC Type Tag string.
+    // Until all such implementations are updated, OSC implementations should be
+    // robust in the case of a missing OSC Type Tag String."
+    //
+    // (although, the editor notes one may question how exactly the hell one is
+    // supposed to be robust when the behaviour is unspecified.)
     if (typeTagString.size() == 0 || typeTagString.at(0) != ',')
         return;
 
@@ -70,13 +76,6 @@ QOscMessage::QOscMessage(const QByteArray &data)
 
     qDebug() << "Message with address pattern: " << addressPattern;
     qDebug() << "Arguments: " << arguments;
-    //
-    // Note: some older implementations of OSC may omit the OSC Type Tag string.
-    // Until all such implementations are updated, OSC implementations should be
-    // robust in the case of a missing OSC Type Tag String."
-    //
-    // (although, the editor notes one may question how exactly the hell one is
-    // supposed to be robust when the behaviour is unspecified.)
 }
 
 bool QOscMessage::isValid() const
