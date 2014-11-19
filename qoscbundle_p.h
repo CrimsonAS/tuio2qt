@@ -7,7 +7,10 @@ class QOscBundle
 {
 public:
     QOscBundle(const QByteArray &data);
+
     bool isValid() const;
+    QList<QOscBundle> bundles() const;
+    QList<QOscMessage> messages() const;
 
 private:
     bool m_isValid;

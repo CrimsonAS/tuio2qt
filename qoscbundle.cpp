@@ -137,3 +137,13 @@ bool QOscBundle::isValid() const
     return m_isValid;
 }
 
+QList<QOscBundle> QOscBundle::bundles() const
+{
+    return m_bundles;
+}
+
+QList<QOscMessage> QOscBundle::messages() const
+{
+    return m_messages;
+}
+
