@@ -1,0 +1,42 @@
+#include <QtTest>
+
+#include "../qoscbundle_p.h"
+#include "../qoscmessage_p.h"
+
+class tst_osc : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void testBasics();
+    void simpleBundle();
+    void complexBundle();
+};
+
+void tst_osc::testBasics()
+{
+    QOscBundle bundle = QOscBundle(QByteArray());
+    QVERIFY(!bundle.isValid());
+    QOscMessage message = QOscMessage(QByteArray());
+    QVERIFY(!message.isValid());
+}
+
+void tst_osc::simpleBundle()
+{
+    QByteArray payload = QByteArray::fromHex("2362756e646c65000000000000000001000000182f7475696f2f3244637572002c730000616c6976650000000000001c2f7475696f2f3244637572002c7369006673657100000000ffffffff");
+
+    QOscBundle bundle(payload);
+    QVERIFY(bundle.isValid());
+}
+
+void tst_osc::complexBundle()
+{
+    QByteArray payload = QByteArray::fromHex("2362756e646c65000000000000000001000000302f7475696f2f3244637572002c737300736f7572636500005475696f5061644031302e31302e31302e31323000000000000000282f7475696f2f3244637572002c73696969000000616c697665000000000000010000000200000003000000342f7475696f2f3244637572002c736966666666660000000073657400000000013ee666663f14cccdbfc8001200000000410236b7000000342f7475696f2f3244637572002c736966666666660000000073657400000000023f0666663e8ccccdbfe95565be47ffb4418158c3000000342f7475696f2f3244637572002c736966666666660000000073657400000000033e6666683f333333bf47fff33e480031c23d4d1d0000001c2f7475696f2f3244637572002c736900667365710000000000000671");
+
+    QOscBundle bundle(payload);
+    QVERIFY(bundle.isValid());
+}
+
+QTEST_GUILESS_MAIN(tst_osc)
+
+#include "main.moc"
