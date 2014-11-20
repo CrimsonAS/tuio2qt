@@ -15,6 +15,21 @@
 // (no chance of read-past-data assert hitting)
 // - do we need to check for read-past-bounds?
 
+static QByteArray readOscString(const QByteArray &data, quint32 &pos)
+{
+    QByteArray re;
+    int end = data.indexOf('\0', pos);
+    if (end < 0) {
+        pos = data.size();
+        return re;
+    }
+
+    re = data.mid(pos, end - pos);
+    end += 4 - ((end - pos) % 4);
+    pos = end;
+    return re;
+}
+
 QOscMessage::QOscMessage(const QByteArray &data)
     : m_isValid(false)
 {
@@ -22,19 +37,12 @@ QOscMessage::QOscMessage(const QByteArray &data)
     quint32 parsedBytes = 0;
 
     // "An OSC message consists of an OSC Address Pattern"
-    QByteArray addressPattern = QByteArray(data.constData() + parsedBytes); // rely on the null to 'save' us
-    parsedBytes += addressPattern.size();
-    while ((data.constData() + parsedBytes) && *(data.constData() + parsedBytes) == '\0')
-        parsedBytes++;
-
+    QByteArray addressPattern = readOscString(data, parsedBytes);
     if (addressPattern.size() == 0)
         return;
 
     // "followed by an OSC Type Tag String"
-    QByteArray typeTagString = QByteArray(data.constData() + parsedBytes); // rely on the null to 'save' us
-    parsedBytes += typeTagString.size();
-    while ((data.constData() + parsedBytes) && *(data.constData() + parsedBytes) == '\0')
-        parsedBytes++;
+    QByteArray typeTagString = readOscString(data, parsedBytes);
 
     // "Note: some older implementations of OSC may omit the OSC Type Tag string.
     // Until all such implementations are updated, OSC implementations should be
@@ -51,10 +59,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     for (int i = 1; i < typeTagString.size(); ++i) {
         char typeTag = typeTagString.at(i);
         if (typeTag == 's') { // osc-string
-            QByteArray aString = QByteArray(data.constData() + parsedBytes); // rely on the null to 'save' us
-            parsedBytes += aString.size();
-            while ((data.constData() + parsedBytes) && *(data.constData() + parsedBytes) == '\0')
-                parsedBytes++;
+            QByteArray aString = readOscString(data, parsedBytes);
             arguments.append(aString);
         } else if (typeTag == 'i') { // int32
             quint32 anInt = qFromBigEndian<quint32>((const uchar*)data.constData() + parsedBytes);
