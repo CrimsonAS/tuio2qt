@@ -66,9 +66,14 @@ QOscMessage::QOscMessage(const QByteArray &data)
             parsedBytes += sizeof(quint32);
             arguments.append((int)anInt);
         } else if (typeTag == 'f') { // float32
-            quint32 anInt = qFromBigEndian<quint32>((const uchar*)data.constData() + parsedBytes);
+            Q_STATIC_ASSERT(sizeof(float) == sizeof(quint32));
+            union {
+                quint32 u;
+                float f;
+            } value;
+            value.u = qFromBigEndian<quint32>((const uchar*)data.constData() + parsedBytes);
             parsedBytes += sizeof(quint32);
-            arguments.append((float)anInt);
+            arguments.append(value.f);
         } else {
             qWarning() << "Reading argument of unknown type " << typeTag;
             return;
