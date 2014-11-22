@@ -39,6 +39,8 @@
 #include "qoscbundle_p.h"
 
 Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
+Q_LOGGING_CATEGORY(lcTuioAlive, "qt.qpa.tuio.alive")
+Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
 class TuioCursor
 {
@@ -201,7 +203,7 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
         int cursorId = arguments.at(i).toInt();
         if (!oldActiveCursors.contains(cursorId)) {
             // newly active
-            qDebug() << "New TUIO object: " << cursorId << " is alive";
+            qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
         } else {
             // we already know about it, remove it so it isn't marked as released
             oldActiveCursors.remove(cursorId);
@@ -213,7 +215,7 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
     // anything left is dead now
     QMap<int, TuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
     while (it != oldActiveCursors.constEnd()) {
-        qDebug() << "Dead TUIO object: " << it.key();
+        qDebug(lcTuioAlive) << "Dead TUIO object: " << it.key();
         ++it;
     }
 
@@ -252,7 +254,7 @@ void TuioSocket::process2DCurSet(const QOscMessage &message)
         return;
     }
 
-    qDebug() << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
+    qDebug(lcTuioSet) << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
     TuioCursor &cur = *it;
     cur.setX(x);
     cur.setY(y);
