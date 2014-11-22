@@ -13,6 +13,8 @@ public:
 
 private slots:
     void processPackets();
+    void process2DCurSource(const QOscMessage &message);
+    void process2DCurAlive(const QOscMessage &message);
 
 private:
     QUdpSocket m_socket;
@@ -70,21 +72,9 @@ void TuioSocket::processPackets()
 
             QByteArray messageType = arguments.at(0).toByteArray();
             if (messageType == "source") {
-                if (arguments.count() != 2) {
-                    qWarning() << "Ignoring malformed TUIO source message: " << arguments.count();
-                    continue;
-                }
-
-                qDebug() << "Got TUIO source message from: " << arguments.at(1).toByteArray();
+                process2DCurSource(message);
             } else if (messageType == "alive") {
-                if (arguments.count() < 1) {
-                    qWarning() << "Ignoring malformed TUIO alive message: " << arguments.count();
-                    continue;
-                }
-
-                for (int i = 1; i < arguments.count(); ++i) {
-                    qDebug() << "TUIO object: " << arguments.at(i).toInt() << " is alive";
-                }
+                process2DCurAlive(message);
             } else if (messageType == "set") {
             } else if (messageType == "fseq") {
             } else {
@@ -92,6 +82,34 @@ void TuioSocket::processPackets()
                 continue;
             }
         }
+    }
+}
+
+void TuioSocket::process2DCurSource(const QOscMessage &message)
+{
+    QList<QVariant> arguments = message.arguments();
+    if (arguments.count() != 2) {
+        qWarning() << "Ignoring malformed TUIO source message: " << arguments.count();
+        return;
+    }
+
+    qDebug() << "Got TUIO source message from: " << arguments.at(1).toByteArray();
+}
+
+void TuioSocket::process2DCurAlive(const QOscMessage &message)
+{
+    QList<QVariant> arguments = message.arguments();
+    if (arguments.count() < 1) {
+        qWarning() << "Ignoring malformed TUIO alive message: " << arguments.count();
+        return;
+    }
+
+    for (int i = 1; i < arguments.count(); ++i) {
+        if (arguments.at(i).type() != QVariant::Int) {
+            qWarning() << "Ignoring malformed TUIO alive message (bad argument on position" << i << arguments << ")";
+            return;
+        }
+        qDebug() << "TUIO object: " << arguments.at(i).toInt() << " is alive: " << arguments;
     }
 }
 
