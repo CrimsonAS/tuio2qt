@@ -1,7 +1,49 @@
 #include <QCoreApplication>
 #include <QUdpSocket>
+#include <QLoggingCategory>
 
 #include "qoscbundle_p.h"
+
+Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
+
+class TuioCursor
+{
+public:
+    TuioCursor(int id)
+        : m_id(id)
+        , m_x(0)
+        , m_y(0)
+        , m_vx(0)
+        , m_vy(0)
+        , m_acceleration(0)
+    {
+    }
+
+    int id() const { return m_id; }
+
+    void setX(float x) { m_x = x; }
+    float x() const { return m_x; }
+
+    void setY(float y) { m_y = y; }
+    float y() const { return m_y; }
+
+    void setVX(float vx) { m_vx = vx; }
+    float vx() const { return m_vx; }
+
+    void setVY(float vy) { m_vy = vy; }
+    float vy() const { return m_vy; }
+
+    void setAcceleration(float acceleration) { m_acceleration = acceleration; }
+    float acceleration() const { return m_acceleration; }
+
+private:
+    int m_id;
+    float m_x;
+    float m_y;
+    float m_vx;
+    float m_vy;
+    float m_acceleration;
+};
 
 class TuioSocket : public QObject
 {
@@ -18,6 +60,7 @@ private slots:
 
 private:
     QUdpSocket m_socket;
+    QMap<int, TuioCursor> m_activeCursors;
 };
 
 TuioSocket::TuioSocket()
@@ -93,7 +136,7 @@ void TuioSocket::process2DCurSource(const QOscMessage &message)
         return;
     }
 
-    qDebug() << "Got TUIO source message from: " << arguments.at(1).toByteArray();
+    qCDebug(lcTuioSource) << "Got TUIO source message from: " << arguments.at(1).toByteArray();
 }
 
 void TuioSocket::process2DCurAlive(const QOscMessage &message)
@@ -104,13 +147,41 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
         return;
     }
 
+    // delta the notified cursors that are active, against the ones we already
+    // know of.
+    //
+    // TBD: right now we're assuming one 2Dcur alive message corresponds to a
+    // new data source from the input. is this correct, or do we need to store
+    // changes and only process the deltas on fseq?
+    QMap<int, TuioCursor> oldActiveCursors = m_activeCursors;
+    QMap<int, TuioCursor> newActiveCursors;
+
     for (int i = 1; i < arguments.count(); ++i) {
         if (arguments.at(i).type() != QVariant::Int) {
             qWarning() << "Ignoring malformed TUIO alive message (bad argument on position" << i << arguments << ")";
             return;
         }
-        qDebug() << "TUIO object: " << arguments.at(i).toInt() << " is alive: " << arguments;
+
+        int cursorId = arguments.at(i).toInt();
+        if (!oldActiveCursors.contains(cursorId)) {
+            // newly active
+            qDebug() << "New TUIO object: " << cursorId << " is alive";
+        } else {
+            // we already know about it, remove it so it isn't marked as released
+            oldActiveCursors.remove(cursorId);
+        }
+
+        newActiveCursors.insert(cursorId, TuioCursor(cursorId));
     }
+
+    // anything left is dead now
+    QMap<int, TuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
+    while (it != oldActiveCursors.constEnd()) {
+        qDebug() << "Dead TUIO object: " << it.key();
+        ++it;
+    }
+
+    m_activeCursors = newActiveCursors;
 }
 
 int main(int argc, char **argv)
