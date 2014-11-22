@@ -57,6 +57,7 @@ private slots:
     void processPackets();
     void process2DCurSource(const QOscMessage &message);
     void process2DCurAlive(const QOscMessage &message);
+    void process2DCurSet(const QOscMessage &message);
 
 private:
     QUdpSocket m_socket;
@@ -119,6 +120,7 @@ void TuioSocket::processPackets()
             } else if (messageType == "alive") {
                 process2DCurAlive(message);
             } else if (messageType == "set") {
+                process2DCurSet(message);
             } else if (messageType == "fseq") {
             } else {
                 qWarning() << "Ignoring unknown TUIO message type: " << messageType;
@@ -182,6 +184,47 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
     }
 
     m_activeCursors = newActiveCursors;
+}
+
+void TuioSocket::process2DCurSet(const QOscMessage &message)
+{
+    QList<QVariant> arguments = message.arguments();
+    if (arguments.count() < 6) {
+        qWarning() << "Ignoring malformed TUIO set message with too few arguments: " << arguments.count();
+        return;
+    }
+
+    if (arguments.at(1).type() != QVariant::Int ||
+        arguments.at(2).type() != QMetaType::Float ||
+        arguments.at(3).type() != QMetaType::Float ||
+        arguments.at(4).type() != QMetaType::Float ||
+        arguments.at(5).type() != QMetaType::Float ||
+        arguments.at(6).type() != QMetaType::Float
+       ) {
+        qWarning() << "Ignoring malformed TUIO set message with bad types: " << arguments;
+        return;
+    }
+
+    int cursorId = arguments.at(1).toInt();
+    float x = arguments.at(2).toFloat();
+    float y = arguments.at(3).toFloat();
+    float vx = arguments.at(4).toFloat();
+    float vy = arguments.at(5).toFloat();
+    float acceleration = arguments.at(6).toFloat();
+
+    QMap<int, TuioCursor>::Iterator it = m_activeCursors.find(cursorId);
+    if (it == m_activeCursors.end()) {
+        qWarning() << "Ignoring malformed TUIO set for nonexistent cursor " << cursorId;
+        return;
+    }
+
+    qDebug() << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
+    TuioCursor &cur = *it;
+    cur.setX(x);
+    cur.setY(y);
+    cur.setVX(vx);
+    cur.setVY(vy);
+    cur.setAcceleration(acceleration);
 }
 
 int main(int argc, char **argv)
