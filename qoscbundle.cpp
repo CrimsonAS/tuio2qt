@@ -1,7 +1,10 @@
 #include <QtEndian>
 #include <QDebug>
+#include <QLoggingCategory>
 
 #include "qoscbundle_p.h"
+
+Q_LOGGING_CATEGORY(lcTuioBundle, "qt.qpa.tuio.bundle")
 
 // TUIO packets are transmitted using the OSC protocol, located at:
 //   http://opensoundcontrol.org/specification
@@ -20,7 +23,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
     // 00 00 00 00 00 00 00 01 // osc time-tag, "immediately"
     // 00 00 00 30 // element length
     //      => message or bundle(s), preceeded by length each time
-    qDebug() << data.toHex();
+    qCDebug(lcTuioBundle) << data.toHex();
     quint32 parsedBytes = 0;
 
     // "An OSC Bundle consists of the OSC-string "#bundle""

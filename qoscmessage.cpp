@@ -2,8 +2,11 @@
 #include <QDebug>
 #include <QtEndian>
 #include <QVariant>
+#include <QLoggingCategory>
 
 #include "qoscmessage_p.h"
+
+Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 
 // TUIO packets are transmitted using the OSC protocol, located at:
 //   http://opensoundcontrol.org/specification
@@ -33,7 +36,7 @@ static QByteArray readOscString(const QByteArray &data, quint32 &pos)
 QOscMessage::QOscMessage(const QByteArray &data)
     : m_isValid(false)
 {
-    qDebug() << data.toHex();
+    qCDebug(lcTuioMessage) << data.toHex();
     quint32 parsedBytes = 0;
 
     // "An OSC message consists of an OSC Address Pattern"
@@ -84,8 +87,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     m_addressPattern = addressPattern;
     m_arguments = arguments;
 
-    qDebug() << "Message with address pattern: " << addressPattern;
-    qDebug() << "Arguments: " << arguments;
+    qCDebug(lcTuioMessage) << "Message with address pattern: " << addressPattern << " arguments: " << arguments;
 }
 
 bool QOscMessage::isValid() const
