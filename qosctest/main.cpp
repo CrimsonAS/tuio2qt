@@ -43,6 +43,8 @@ class tst_osc : public QObject
 
 private slots:
     void testBasics();
+    void brokenBundles_data();
+    void brokenBundles();
     void simpleBundle();
     void complexBundle();
 };
@@ -53,6 +55,31 @@ void tst_osc::testBasics()
     QVERIFY(!bundle.isValid());
     QOscMessage message = QOscMessage(QByteArray());
     QVERIFY(!message.isValid());
+}
+
+void tst_osc::brokenBundles_data()
+{
+    QTest::addColumn<QByteArray>("payload");
+    QByteArray payload = QByteArray::fromHex("2362756e646c65000000000000000001000000182f7475696f2f3244637572002c730000616c6976650000000000001c2f7475696f2f3244637572002c7369006673657100000000ffffffff");
+
+    while (payload.size() >= 1) {
+        QTest::newRow((QString::number(payload.size()) + QLatin1String(" characters (1)")).toLatin1().constData()) << payload;
+        payload = payload.left(payload.size() - 1);
+    }
+
+    payload = QByteArray::fromHex("2362756e646c65000000000000000001000000302f7475696f2f3244637572002c737300736f7572636500005475696f5061644031302e31302e31302e31323000000000000000282f7475696f2f3244637572002c73696969000000616c697665000000000000010000000200000003000000342f7475696f2f3244637572002c736966666666660000000073657400000000013ee666663f14cccdbfc8001200000000410236b7000000342f7475696f2f3244637572002c736966666666660000000073657400000000023f0666663e8ccccdbfe95565be47ffb4418158c3000000342f7475696f2f3244637572002c736966666666660000000073657400000000033e6666683f333333bf47fff33e480031c23d4d1d0000001c2f7475696f2f3244637572002c736900667365710000000000000671");
+
+    while (payload.size() >= 1) {
+        QTest::newRow((QString::number(payload.size()) + QLatin1String(" characters (2)")).toLatin1().constData()) << payload;
+        payload = payload.left(payload.size() - 1);
+    }
+}
+
+void tst_osc::brokenBundles()
+{
+    // all this test needs to do is to  make sure we don't crash
+    QFETCH(QByteArray, payload);
+    QOscBundle bundle(payload);
 }
 
 void tst_osc::simpleBundle()
