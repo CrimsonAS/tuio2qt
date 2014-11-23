@@ -47,15 +47,10 @@ Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 // Snippets of this specification have been pasted into the source as a means of
 // easily communicating requirements.
 
-// XXX:
-// - helper for OSC-string to reduce the magic and make it feel a little safer
-// (no chance of read-past-data assert hitting)
-// - do we need to check for read-past-bounds?
-
 static QByteArray readOscString(const QByteArray &data, quint32 &pos)
 {
     QByteArray re;
-    int end = data.indexOf('\0', pos);
+    int end = data.indexOf('\0', pos); // XXX: is this safe if pos is past data's bounds?
     if (end < 0) {
         pos = data.size();
         return re;
@@ -75,7 +70,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
 
     // "An OSC message consists of an OSC Address Pattern"
     QByteArray addressPattern = readOscString(data, parsedBytes);
-    if (addressPattern.size() == 0)
+    if (addressPattern.size() == 0 || parsedBytes >= data.size())
         return;
 
     // "followed by an OSC Type Tag String"
@@ -87,7 +82,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     //
     // (although, the editor notes one may question how exactly the hell one is
     // supposed to be robust when the behaviour is unspecified.)
-    if (typeTagString.size() == 0 || typeTagString.at(0) != ',')
+    if (typeTagString.size() == 0 || typeTagString.at(0) != ',' || parsedBytes >= data.size())
         return;
 
     QList<QVariant> arguments;
@@ -96,13 +91,20 @@ QOscMessage::QOscMessage(const QByteArray &data)
     for (int i = 1; i < typeTagString.size(); ++i) {
         char typeTag = typeTagString.at(i);
         if (typeTag == 's') { // osc-string
+            // no length check here, readOscString is smart
             QByteArray aString = readOscString(data, parsedBytes);
             arguments.append(aString);
         } else if (typeTag == 'i') { // int32
+            if (data.length() - parsedBytes < sizeof(quint32))
+                return;
+
             quint32 anInt = qFromBigEndian<quint32>((const uchar*)data.constData() + parsedBytes);
             parsedBytes += sizeof(quint32);
             arguments.append((int)anInt);
         } else if (typeTag == 'f') { // float32
+            if (data.length() - parsedBytes < sizeof(quint32))
+                return;
+
             Q_STATIC_ASSERT(sizeof(float) == sizeof(quint32));
             union {
                 quint32 u;
