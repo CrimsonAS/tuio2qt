@@ -87,7 +87,7 @@ public:
     void setAcceleration(float acceleration) { m_acceleration = acceleration; }
     float acceleration() const { return m_acceleration; }
 
-    void setState(const Qt::TouchPointState &state) { if (m_state == state) return; m_state = state; qDebug() << "State for " << id() << " is now " << m_state; }
+    void setState(const Qt::TouchPointState &state) { m_state = state; }
     Qt::TouchPointState state() const { return m_state; }
 
 private:
@@ -113,10 +113,12 @@ private slots:
     void process2DCurSource(const QOscMessage &message);
     void process2DCurAlive(const QOscMessage &message);
     void process2DCurSet(const QOscMessage &message);
+    void process2DCurFseq(const QOscMessage &message);
 
 private:
     QUdpSocket m_socket;
     QMap<int, TuioCursor> m_activeCursors;
+    QVector<TuioCursor> m_deadCursors;
 };
 
 TuioSocket::TuioSocket()
@@ -177,6 +179,7 @@ void TuioSocket::processPackets()
             } else if (messageType == "set") {
                 process2DCurSet(message);
             } else if (messageType == "fseq") {
+                process2DCurFseq(message);
             } else {
                 qWarning() << "Ignoring unknown TUIO message type: " << messageType;
                 continue;
@@ -227,7 +230,6 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
         int cursorId = arguments.at(i).toInt();
         if (!oldActiveCursors.contains(cursorId)) {
             // newly active
-            qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
             TuioCursor cursor(cursorId);
             cursor.setState(Qt::TouchPointPressed);
             newActiveCursors.insert(cursorId, cursor);
@@ -242,8 +244,9 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
 
     // anything left is dead now
     QMap<int, TuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
+    m_deadCursors.reserve(oldActiveCursors.size());
     while (it != oldActiveCursors.constEnd()) {
-        qDebug(lcTuioAlive) << "Dead TUIO object: " << it.key();
+        m_deadCursors.append(it.value());
         ++it;
     }
 
@@ -289,6 +292,26 @@ void TuioSocket::process2DCurSet(const QOscMessage &message)
     cur.setVX(vx);
     cur.setVY(vy);
     cur.setAcceleration(acceleration);
+}
+
+void TuioSocket::process2DCurFseq(const QOscMessage &message)
+{
+    Q_UNUSED(message); // TODO: do we need to do anything with the frame id?
+
+    foreach (const TuioCursor &tc, m_activeCursors) {
+        int cursorId = tc.id();
+        if (tc.state() == Qt::TouchPointPressed) {
+            qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
+        } else if (tc.state() == Qt::TouchPointStationary) {
+            qDebug() << "Stationary TUIO cursor: " << cursorId;
+        } else if (tc.state() == Qt::TouchPointMoved) {
+            qDebug() << "Moved TUIO cursor: " << cursorId;
+        }
+    }
+
+    foreach (const TuioCursor &tc, m_deadCursors) {
+        qDebug(lcTuioAlive) << "Dead TUIO object: " << tc.id();
+    }
 }
 
 int main(int argc, char **argv)
