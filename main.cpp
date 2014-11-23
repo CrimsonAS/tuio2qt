@@ -174,6 +174,11 @@ void TuioSocket::process2DCurSource(const QOscMessage &message)
         return;
     }
 
+    if (arguments.at(1).type() != QVariant::ByteArray) {
+        qWarning() << "Ignoring malformed TUIO source message (bad argument type)";
+        return;
+    }
+
     qCDebug(lcTuioSource) << "Got TUIO source message from: " << arguments.at(1).toByteArray();
 }
 
