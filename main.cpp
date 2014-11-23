@@ -57,7 +57,6 @@ QTuioTouchPlugin::QTuioTouchPlugin()
 QObject* QTuioTouchPlugin::create(const QString &key,
                                          const QString &spec)
 {
-    qDebug() << "Creating " << key << spec;
     if (!key.compare(QLatin1String("TuioTouch"), Qt::CaseInsensitive)) {
         // TODO: grab options out of spec
         return new QTuioHandler;
