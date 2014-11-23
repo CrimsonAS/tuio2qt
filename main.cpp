@@ -45,22 +45,37 @@ Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 class TuioCursor
 {
 public:
-    TuioCursor(int id)
+    TuioCursor(int id = -1)
         : m_id(id)
         , m_x(0)
         , m_y(0)
         , m_vx(0)
         , m_vy(0)
         , m_acceleration(0)
+        , m_state(Qt::TouchPointPressed)
     {
     }
 
     int id() const { return m_id; }
 
-    void setX(float x) { m_x = x; }
+    void setX(float x)
+    {
+        if (state() == Qt::TouchPointStationary &&
+            !qFuzzyCompare(m_x + 2.0, x + 2.0)) { // +2 because 1 is a valid value, and qFuzzyCompare can't cope with 0.0
+            setState(Qt::TouchPointMoved);
+        }
+        m_x = x;
+    }
     float x() const { return m_x; }
 
-    void setY(float y) { m_y = y; }
+    void setY(float y)
+    {
+        if (state() == Qt::TouchPointStationary &&
+            !qFuzzyCompare(m_y + 2.0, y + 2.0)) { // +2 because 1 is a valid value, and qFuzzyCompare can't cope with 0.0
+            setState(Qt::TouchPointMoved);
+        }
+        m_y = y;
+    }
     float y() const { return m_y; }
 
     void setVX(float vx) { m_vx = vx; }
@@ -72,6 +87,9 @@ public:
     void setAcceleration(float acceleration) { m_acceleration = acceleration; }
     float acceleration() const { return m_acceleration; }
 
+    void setState(const Qt::TouchPointState &state) { if (m_state == state) return; m_state = state; qDebug() << "State for " << id() << " is now " << m_state; }
+    Qt::TouchPointState state() const { return m_state; }
+
 private:
     int m_id;
     float m_x;
@@ -79,6 +97,7 @@ private:
     float m_vx;
     float m_vy;
     float m_acceleration;
+    Qt::TouchPointState m_state;
 };
 
 class TuioSocket : public QObject
@@ -209,12 +228,16 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
         if (!oldActiveCursors.contains(cursorId)) {
             // newly active
             qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
+            TuioCursor cursor(cursorId);
+            cursor.setState(Qt::TouchPointPressed);
+            newActiveCursors.insert(cursorId, cursor);
         } else {
             // we already know about it, remove it so it isn't marked as released
+            TuioCursor cursor = oldActiveCursors.value(cursorId);
+            cursor.setState(Qt::TouchPointStationary); // position change in SET will update if needed
+            newActiveCursors.insert(cursorId, cursor);
             oldActiveCursors.remove(cursorId);
         }
-
-        newActiveCursors.insert(cursorId, TuioCursor(cursorId));
     }
 
     // anything left is dead now
