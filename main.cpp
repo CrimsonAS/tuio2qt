@@ -42,10 +42,10 @@ Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
 Q_LOGGING_CATEGORY(lcTuioAlive, "qt.qpa.tuio.alive")
 Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
-class TuioCursor
+class QTuioCursor
 {
 public:
-    TuioCursor(int id = -1)
+    QTuioCursor(int id = -1)
         : m_id(id)
         , m_x(0)
         , m_y(0)
@@ -117,8 +117,8 @@ private slots:
 
 private:
     QUdpSocket m_socket;
-    QMap<int, TuioCursor> m_activeCursors;
-    QVector<TuioCursor> m_deadCursors;
+    QMap<int, QTuioCursor> m_activeCursors;
+    QVector<QTuioCursor> m_deadCursors;
 };
 
 TuioSocket::TuioSocket()
@@ -218,8 +218,8 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
     // TBD: right now we're assuming one 2Dcur alive message corresponds to a
     // new data source from the input. is this correct, or do we need to store
     // changes and only process the deltas on fseq?
-    QMap<int, TuioCursor> oldActiveCursors = m_activeCursors;
-    QMap<int, TuioCursor> newActiveCursors;
+    QMap<int, QTuioCursor> oldActiveCursors = m_activeCursors;
+    QMap<int, QTuioCursor> newActiveCursors;
 
     for (int i = 1; i < arguments.count(); ++i) {
         if (arguments.at(i).type() != QVariant::Int) {
@@ -230,12 +230,12 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
         int cursorId = arguments.at(i).toInt();
         if (!oldActiveCursors.contains(cursorId)) {
             // newly active
-            TuioCursor cursor(cursorId);
+            QTuioCursor cursor(cursorId);
             cursor.setState(Qt::TouchPointPressed);
             newActiveCursors.insert(cursorId, cursor);
         } else {
             // we already know about it, remove it so it isn't marked as released
-            TuioCursor cursor = oldActiveCursors.value(cursorId);
+            QTuioCursor cursor = oldActiveCursors.value(cursorId);
             cursor.setState(Qt::TouchPointStationary); // position change in SET will update if needed
             newActiveCursors.insert(cursorId, cursor);
             oldActiveCursors.remove(cursorId);
@@ -243,7 +243,7 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
     }
 
     // anything left is dead now
-    QMap<int, TuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
+    QMap<int, QTuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
     m_deadCursors.reserve(oldActiveCursors.size());
     while (it != oldActiveCursors.constEnd()) {
         m_deadCursors.append(it.value());
@@ -279,14 +279,14 @@ void TuioSocket::process2DCurSet(const QOscMessage &message)
     float vy = arguments.at(5).toFloat();
     float acceleration = arguments.at(6).toFloat();
 
-    QMap<int, TuioCursor>::Iterator it = m_activeCursors.find(cursorId);
+    QMap<int, QTuioCursor>::Iterator it = m_activeCursors.find(cursorId);
     if (it == m_activeCursors.end()) {
         qWarning() << "Ignoring malformed TUIO set for nonexistent cursor " << cursorId;
         return;
     }
 
     qDebug(lcTuioSet) << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
-    TuioCursor &cur = *it;
+    QTuioCursor &cur = *it;
     cur.setX(x);
     cur.setY(y);
     cur.setVX(vx);
@@ -298,7 +298,7 @@ void TuioSocket::process2DCurFseq(const QOscMessage &message)
 {
     Q_UNUSED(message); // TODO: do we need to do anything with the frame id?
 
-    foreach (const TuioCursor &tc, m_activeCursors) {
+    foreach (const QTuioCursor &tc, m_activeCursors) {
         int cursorId = tc.id();
         if (tc.state() == Qt::TouchPointPressed) {
             qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
@@ -309,7 +309,7 @@ void TuioSocket::process2DCurFseq(const QOscMessage &message)
         }
     }
 
-    foreach (const TuioCursor &tc, m_deadCursors) {
+    foreach (const QTuioCursor &tc, m_deadCursors) {
         qDebug(lcTuioAlive) << "Dead TUIO object: " << tc.id();
     }
 }
