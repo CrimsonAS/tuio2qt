@@ -40,6 +40,7 @@
 #include <QUdpSocket>
 #include <QVector>
 
+class QTouchDevice;
 class QOscMessage;
 class QTuioCursor;
 
@@ -59,6 +60,7 @@ private slots:
     void process2DCurFseq(const QOscMessage &message);
 
 private:
+    QTouchDevice *m_device;
     QUdpSocket m_socket;
     QMap<int, QTuioCursor> m_activeCursors;
     QVector<QTuioCursor> m_deadCursors;

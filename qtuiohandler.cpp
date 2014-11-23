@@ -33,17 +33,27 @@
 ****************************************************************************/
 
 #include <QLoggingCategory>
+#include <QRect>
+#include <QWindow>
+#include <QGuiApplication>
+
+#include <qpa/qwindowsysteminterface.h>
 
 #include "qtuiocursor_p.h"
 #include "qtuiohandler_p.h"
 #include "qoscbundle_p.h"
 
 Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
-Q_LOGGING_CATEGORY(lcTuioAlive, "qt.qpa.tuio.alive")
 Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
 QTuioHandler::QTuioHandler()
+    : m_device(new QTouchDevice) // TODO: leaked
 {
+    m_device->setName("TUIO"); // TODO: multiple based on SOURCE?
+    m_device->setType(QTouchDevice::TouchScreen);
+    m_device->setCapabilities(QTouchDevice::Position | QTouchDevice::Area);
+    QWindowSystemInterface::registerTouchDevice(m_device);
+
     if (!m_socket.bind(QHostAddress::Any, 40001)) {
         qWarning() << "Failed to bind TUIO socket: " << m_socket.errorString();
         return;
@@ -215,24 +225,52 @@ void QTuioHandler::process2DCurSet(const QOscMessage &message)
     cur.setAcceleration(acceleration);
 }
 
+static QWindowSystemInterface::TouchPoint cursorToTouchPoint(const QTuioCursor &tc, QWindow *win)
+{
+    QWindowSystemInterface::TouchPoint tp;
+    tp.id = tc.id();
+    tp.pressure = 1.0f;
+
+    tp.normalPosition = QPointF(tc.x(), tc.y());
+    tp.state = tc.state();
+
+    tp.area = QRectF(0, 0, 1, 1);
+
+    // we map the touch to the size of the window. we do this, because frankly,
+    // trying to figure out which part of the screen to hit in order to press an
+    // element on the UI is pretty tricky when one is not using an overlay-style
+    // TUIO device.
+    //
+    // in the future, it might make sense to make this choice optional,
+    // dependent on the spec.
+    QPointF relPos = QPointF(win->size().width() * tc.x(), win->size().height() * tc.y());
+    QPointF delta = relPos - relPos.toPoint();
+    tp.area.moveCenter(win->mapToGlobal(relPos.toPoint()) + delta);
+    return tp;
+}
+
+
 void QTuioHandler::process2DCurFseq(const QOscMessage &message)
 {
     Q_UNUSED(message); // TODO: do we need to do anything with the frame id?
 
+    QWindow *win = QGuiApplication::focusWindow();
+    if (!win)
+        return;
+
+    QList<QWindowSystemInterface::TouchPoint> tpl;
+
     foreach (const QTuioCursor &tc, m_activeCursors) {
-        int cursorId = tc.id();
-        if (tc.state() == Qt::TouchPointPressed) {
-            qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
-        } else if (tc.state() == Qt::TouchPointStationary) {
-            qDebug() << "Stationary TUIO cursor: " << cursorId;
-        } else if (tc.state() == Qt::TouchPointMoved) {
-            qDebug() << "Moved TUIO cursor: " << cursorId;
-        }
+        QWindowSystemInterface::TouchPoint tp = cursorToTouchPoint(tc, win);
+        tpl.append(tp);
     }
 
     foreach (const QTuioCursor &tc, m_deadCursors) {
-        qDebug(lcTuioAlive) << "Dead TUIO object: " << tc.id();
+        QWindowSystemInterface::TouchPoint tp = cursorToTouchPoint(tc, win);
+        tp.state = Qt::TouchPointReleased;
+        tpl.append(tp);
     }
+    QWindowSystemInterface::handleTouchEvent(win, m_device, tpl);
 
     m_deadCursors.clear();
 }
