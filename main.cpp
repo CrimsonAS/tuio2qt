@@ -32,237 +32,40 @@
 **
 ****************************************************************************/
 
+#include <QtGui/qgenericplugin.h>
 #include <QCoreApplication>
-#include <QUdpSocket>
-#include <QLoggingCategory>
 
-#include "qtuiocursor_p.h"
-#include "qoscbundle_p.h"
+#include "qtuiohandler_p.h"
 
-Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
-Q_LOGGING_CATEGORY(lcTuioAlive, "qt.qpa.tuio.alive")
-Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
+QT_BEGIN_NAMESPACE
 
-class QTuioHandler : public QObject
+class QTuioTouchPlugin : public QGenericPlugin
 {
     Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QGenericPluginFactoryInterface" FILE "tuiotouch.json")
 
 public:
-    explicit QTuioHandler();
-    virtual ~QTuioHandler();
+    QTuioTouchPlugin();
 
-private slots:
-    void processPackets();
-    void process2DCurSource(const QOscMessage &message);
-    void process2DCurAlive(const QOscMessage &message);
-    void process2DCurSet(const QOscMessage &message);
-    void process2DCurFseq(const QOscMessage &message);
-
-private:
-    QUdpSocket m_socket;
-    QMap<int, QTuioCursor> m_activeCursors;
-    QVector<QTuioCursor> m_deadCursors;
+    QObject* create(const QString &key, const QString &specification);
 };
 
-QTuioHandler::QTuioHandler()
-{
-    if (!m_socket.bind(QHostAddress::Any, 40001)) {
-        qWarning() << "Failed to bind TUIO socket: " << m_socket.errorString();
-        return;
-    }
-
-    connect(&m_socket, &QUdpSocket::readyRead, this, &QTuioHandler::processPackets);
-}
-
-QTuioHandler::~QTuioHandler()
+QTuioTouchPlugin::QTuioTouchPlugin()
 {
 }
 
-void QTuioHandler::processPackets()
+QObject* QTuioTouchPlugin::create(const QString &key,
+                                         const QString &spec)
 {
-    while (m_socket.hasPendingDatagrams()) {
-        QByteArray datagram;
-        datagram.resize(m_socket.pendingDatagramSize());
-        QHostAddress sender;
-        quint16 senderPort;
-
-        m_socket.readDatagram(datagram.data(), datagram.size(),
-                              &sender, &senderPort);
-
-        QOscBundle bundle(datagram);
-        if (!bundle.isValid())
-            continue;
-
-        // "A typical TUIO bundle will contain an initial ALIVE message,
-        // followed by an arbitrary number of SET messages that can fit into the
-        // actual bundle capacity and a concluding FSEQ message. A minimal TUIO
-        // bundle needs to contain at least the compulsory ALIVE and FSEQ
-        // messages. The FSEQ frame ID is incremented for each delivered bundle,
-        // while redundant bundles can be marked using the frame sequence ID
-        // -1."
-        QList<QOscMessage> messages = bundle.messages();
-
-        foreach (const QOscMessage &message, messages) {
-            if (message.addressPattern() != "/tuio/2Dcur") {
-                qWarning() << "Ignoring unknown address pattern " << message.addressPattern();
-                continue;
-            }
-
-            QList<QVariant> arguments = message.arguments();
-            if (arguments.count() == 0) {
-                qWarning() << "Ignoring TUIO message with no arguments";
-                continue;
-            }
-
-            QByteArray messageType = arguments.at(0).toByteArray();
-            if (messageType == "source") {
-                process2DCurSource(message);
-            } else if (messageType == "alive") {
-                process2DCurAlive(message);
-            } else if (messageType == "set") {
-                process2DCurSet(message);
-            } else if (messageType == "fseq") {
-                process2DCurFseq(message);
-            } else {
-                qWarning() << "Ignoring unknown TUIO message type: " << messageType;
-                continue;
-            }
-        }
+    qDebug() << "Creating " << key << spec;
+    if (!key.compare(QLatin1String("TuioTouch"), Qt::CaseInsensitive)) {
+        // TODO: grab options out of spec
+        return new QTuioHandler;
     }
+
+    return 0;
 }
 
-void QTuioHandler::process2DCurSource(const QOscMessage &message)
-{
-    QList<QVariant> arguments = message.arguments();
-    if (arguments.count() != 2) {
-        qWarning() << "Ignoring malformed TUIO source message: " << arguments.count();
-        return;
-    }
-
-    if (arguments.at(1).type() != QVariant::ByteArray) {
-        qWarning() << "Ignoring malformed TUIO source message (bad argument type)";
-        return;
-    }
-
-    qCDebug(lcTuioSource) << "Got TUIO source message from: " << arguments.at(1).toByteArray();
-}
-
-void QTuioHandler::process2DCurAlive(const QOscMessage &message)
-{
-    QList<QVariant> arguments = message.arguments();
-    if (arguments.count() < 1) {
-        qWarning() << "Ignoring malformed TUIO alive message: " << arguments.count();
-        return;
-    }
-
-    // delta the notified cursors that are active, against the ones we already
-    // know of.
-    //
-    // TBD: right now we're assuming one 2Dcur alive message corresponds to a
-    // new data source from the input. is this correct, or do we need to store
-    // changes and only process the deltas on fseq?
-    QMap<int, QTuioCursor> oldActiveCursors = m_activeCursors;
-    QMap<int, QTuioCursor> newActiveCursors;
-
-    for (int i = 1; i < arguments.count(); ++i) {
-        if (arguments.at(i).type() != QVariant::Int) {
-            qWarning() << "Ignoring malformed TUIO alive message (bad argument on position" << i << arguments << ")";
-            return;
-        }
-
-        int cursorId = arguments.at(i).toInt();
-        if (!oldActiveCursors.contains(cursorId)) {
-            // newly active
-            QTuioCursor cursor(cursorId);
-            cursor.setState(Qt::TouchPointPressed);
-            newActiveCursors.insert(cursorId, cursor);
-        } else {
-            // we already know about it, remove it so it isn't marked as released
-            QTuioCursor cursor = oldActiveCursors.value(cursorId);
-            cursor.setState(Qt::TouchPointStationary); // position change in SET will update if needed
-            newActiveCursors.insert(cursorId, cursor);
-            oldActiveCursors.remove(cursorId);
-        }
-    }
-
-    // anything left is dead now
-    QMap<int, QTuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
-    m_deadCursors.reserve(oldActiveCursors.size());
-    while (it != oldActiveCursors.constEnd()) {
-        m_deadCursors.append(it.value());
-        ++it;
-    }
-
-    m_activeCursors = newActiveCursors;
-}
-
-void QTuioHandler::process2DCurSet(const QOscMessage &message)
-{
-    QList<QVariant> arguments = message.arguments();
-    if (arguments.count() < 6) {
-        qWarning() << "Ignoring malformed TUIO set message with too few arguments: " << arguments.count();
-        return;
-    }
-
-    if (arguments.at(1).type() != QVariant::Int ||
-        arguments.at(2).type() != QMetaType::Float ||
-        arguments.at(3).type() != QMetaType::Float ||
-        arguments.at(4).type() != QMetaType::Float ||
-        arguments.at(5).type() != QMetaType::Float ||
-        arguments.at(6).type() != QMetaType::Float
-       ) {
-        qWarning() << "Ignoring malformed TUIO set message with bad types: " << arguments;
-        return;
-    }
-
-    int cursorId = arguments.at(1).toInt();
-    float x = arguments.at(2).toFloat();
-    float y = arguments.at(3).toFloat();
-    float vx = arguments.at(4).toFloat();
-    float vy = arguments.at(5).toFloat();
-    float acceleration = arguments.at(6).toFloat();
-
-    QMap<int, QTuioCursor>::Iterator it = m_activeCursors.find(cursorId);
-    if (it == m_activeCursors.end()) {
-        qWarning() << "Ignoring malformed TUIO set for nonexistent cursor " << cursorId;
-        return;
-    }
-
-    qDebug(lcTuioSet) << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
-    QTuioCursor &cur = *it;
-    cur.setX(x);
-    cur.setY(y);
-    cur.setVX(vx);
-    cur.setVY(vy);
-    cur.setAcceleration(acceleration);
-}
-
-void QTuioHandler::process2DCurFseq(const QOscMessage &message)
-{
-    Q_UNUSED(message); // TODO: do we need to do anything with the frame id?
-
-    foreach (const QTuioCursor &tc, m_activeCursors) {
-        int cursorId = tc.id();
-        if (tc.state() == Qt::TouchPointPressed) {
-            qDebug(lcTuioAlive) << "New TUIO object: " << cursorId << " is alive";
-        } else if (tc.state() == Qt::TouchPointStationary) {
-            qDebug() << "Stationary TUIO cursor: " << cursorId;
-        } else if (tc.state() == Qt::TouchPointMoved) {
-            qDebug() << "Moved TUIO cursor: " << cursorId;
-        }
-    }
-
-    foreach (const QTuioCursor &tc, m_deadCursors) {
-        qDebug(lcTuioAlive) << "Dead TUIO object: " << tc.id();
-    }
-}
-
-int main(int argc, char **argv)
-{
-    QCoreApplication app(argc, argv);
-    QTuioHandler sock;
-
-    return app.exec();
-}
+QT_END_NAMESPACE
 
 #include "main.moc"
