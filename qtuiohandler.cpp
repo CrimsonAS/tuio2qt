@@ -51,7 +51,10 @@ QTuioHandler::QTuioHandler()
 {
     m_device->setName("TUIO"); // TODO: multiple based on SOURCE?
     m_device->setType(QTouchDevice::TouchScreen);
-    m_device->setCapabilities(QTouchDevice::Position | QTouchDevice::Area);
+    m_device->setCapabilities(QTouchDevice::Position |
+                              QTouchDevice::Area |
+                              QTouchDevice::Velocity |
+                              QTouchDevice::NormalizedPosition);
     QWindowSystemInterface::registerTouchDevice(m_device);
 
     if (!m_socket.bind(QHostAddress::Any, 40001)) {
@@ -246,6 +249,7 @@ static QWindowSystemInterface::TouchPoint cursorToTouchPoint(const QTuioCursor &
     QPointF relPos = QPointF(win->size().width() * tc.x(), win->size().height() * tc.y());
     QPointF delta = relPos - relPos.toPoint();
     tp.area.moveCenter(win->mapToGlobal(relPos.toPoint()) + delta);
+    tp.velocity = QVector2D(win->size().width() * tc.vx(), win->size().height() * tc.vy());
     return tp;
 }
 
