@@ -43,13 +43,13 @@ Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
 Q_LOGGING_CATEGORY(lcTuioAlive, "qt.qpa.tuio.alive")
 Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
-class TuioSocket : public QObject
+class QTuioHandler : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit TuioSocket();
-    virtual ~TuioSocket();
+    explicit QTuioHandler();
+    virtual ~QTuioHandler();
 
 private slots:
     void processPackets();
@@ -64,21 +64,21 @@ private:
     QVector<QTuioCursor> m_deadCursors;
 };
 
-TuioSocket::TuioSocket()
+QTuioHandler::QTuioHandler()
 {
     if (!m_socket.bind(QHostAddress::Any, 40001)) {
         qWarning() << "Failed to bind TUIO socket: " << m_socket.errorString();
         return;
     }
 
-    connect(&m_socket, &QUdpSocket::readyRead, this, &TuioSocket::processPackets);
+    connect(&m_socket, &QUdpSocket::readyRead, this, &QTuioHandler::processPackets);
 }
 
-TuioSocket::~TuioSocket()
+QTuioHandler::~QTuioHandler()
 {
 }
 
-void TuioSocket::processPackets()
+void QTuioHandler::processPackets()
 {
     while (m_socket.hasPendingDatagrams()) {
         QByteArray datagram;
@@ -131,7 +131,7 @@ void TuioSocket::processPackets()
     }
 }
 
-void TuioSocket::process2DCurSource(const QOscMessage &message)
+void QTuioHandler::process2DCurSource(const QOscMessage &message)
 {
     QList<QVariant> arguments = message.arguments();
     if (arguments.count() != 2) {
@@ -147,7 +147,7 @@ void TuioSocket::process2DCurSource(const QOscMessage &message)
     qCDebug(lcTuioSource) << "Got TUIO source message from: " << arguments.at(1).toByteArray();
 }
 
-void TuioSocket::process2DCurAlive(const QOscMessage &message)
+void QTuioHandler::process2DCurAlive(const QOscMessage &message)
 {
     QList<QVariant> arguments = message.arguments();
     if (arguments.count() < 1) {
@@ -196,7 +196,7 @@ void TuioSocket::process2DCurAlive(const QOscMessage &message)
     m_activeCursors = newActiveCursors;
 }
 
-void TuioSocket::process2DCurSet(const QOscMessage &message)
+void QTuioHandler::process2DCurSet(const QOscMessage &message)
 {
     QList<QVariant> arguments = message.arguments();
     if (arguments.count() < 6) {
@@ -237,7 +237,7 @@ void TuioSocket::process2DCurSet(const QOscMessage &message)
     cur.setAcceleration(acceleration);
 }
 
-void TuioSocket::process2DCurFseq(const QOscMessage &message)
+void QTuioHandler::process2DCurFseq(const QOscMessage &message)
 {
     Q_UNUSED(message); // TODO: do we need to do anything with the frame id?
 
@@ -260,7 +260,7 @@ void TuioSocket::process2DCurFseq(const QOscMessage &message)
 int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
-    TuioSocket sock;
+    QTuioHandler sock;
 
     return app.exec();
 }
