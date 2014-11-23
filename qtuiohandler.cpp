@@ -233,6 +233,8 @@ void QTuioHandler::process2DCurFseq(const QOscMessage &message)
     foreach (const QTuioCursor &tc, m_deadCursors) {
         qDebug(lcTuioAlive) << "Dead TUIO object: " << tc.id();
     }
+
+    m_deadCursors.clear();
 }
 
 
