@@ -50,7 +50,7 @@ Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 static QByteArray readOscString(const QByteArray &data, quint32 &pos)
 {
     QByteArray re;
-    int end = data.indexOf('\0', pos); // XXX: is this safe if pos is past data's bounds?
+    int end = data.indexOf('\0', pos);
     if (end < 0) {
         pos = data.size();
         return re;
