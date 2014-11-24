@@ -77,8 +77,11 @@ void QTuioHandler::processPackets()
         QHostAddress sender;
         quint16 senderPort;
 
-        m_socket.readDatagram(datagram.data(), datagram.size(),
-                              &sender, &senderPort);
+        qint64 size = m_socket.readDatagram(datagram.data(), datagram.size(),
+                                             &sender, &senderPort);
+
+        if (size != datagram.size())
+            datagram.resize(size);
 
         QOscBundle bundle(datagram);
         if (!bundle.isValid())
