@@ -80,6 +80,9 @@ void QTuioHandler::processPackets()
         qint64 size = m_socket.readDatagram(datagram.data(), datagram.size(),
                                              &sender, &senderPort);
 
+        if (size == -1)
+            continue;
+
         if (size != datagram.size())
             datagram.resize(size);
 
