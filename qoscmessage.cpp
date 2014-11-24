@@ -57,7 +57,12 @@ static QByteArray readOscString(const QByteArray &data, quint32 &pos)
     }
 
     re = data.mid(pos, end - pos);
+
+    // Skip additional NULL bytes at the end of the string to make sure the
+    // total number of bits a multiple of 32 bits ("OSC-string" in the
+    // specification).
     end += 4 - ((end - pos) % 4);
+
     pos = end;
     return re;
 }
