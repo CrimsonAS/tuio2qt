@@ -65,6 +65,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
     // OSC-strings are null terminated.
     QByteArray bundleIdentifier = QByteArray("#bundle\0", 8);
 
+    // TODO: use readOscString here too
     if (!data.startsWith(bundleIdentifier))
         return;
 
@@ -73,9 +74,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
     // "followed by an OSC Time
     // Tag, followed by zero or more OSC Bundle Elements. The OSC-timetag is a
     // 64-bit fixed point time tag whose semantics are described below."
-
-    // 64 bits => 8 bytes, so len - parsedBytes must be >= 8
-    if (data.length() - parsedBytes < sizeof(quint64))
+    if (parsedBytes > (quint32)data.length() || data.length() - parsedBytes < sizeof(quint64))
         return;
 
     // "Time tags are represented by a 64 bit fixed point number. The first 32
@@ -101,7 +100,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
         isImmediate = true;
     }
 
-    while (parsedBytes < data.length()) {
+    while (parsedBytes < (quint32)data.length()) {
         // "An OSC Bundle Element consists of its size and its contents. The size is an
         // int32 representing the number of 8-bit bytes in the contents, and will
         // always be a multiple of 4."
@@ -118,7 +117,8 @@ QOscBundle::QOscBundle(const QByteArray &data)
             return;
 
         if (size == 0) {
-            // empty
+            // empty bundle; these are valid, but should they be allowed? the
+            // spec is unclear on this...
             qWarning() << "Empty bundle?";
             m_isValid = true;
             m_immediate = isImmediate;
@@ -129,7 +129,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
 
         // "The contents are either an OSC Message or an OSC Bundle.
         // Note this recursive definition: bundle may contain bundles."
-        QByteArray subdata = QByteArray(data.constData() + parsedBytes, size);
+        QByteArray subdata = data.mid(parsedBytes, size);
         parsedBytes += size;
 
         // "The contents of an OSC packet must be either an OSC Message or an OSC Bundle.
