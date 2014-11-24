@@ -47,6 +47,7 @@ Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 // Snippets of this specification have been pasted into the source as a means of
 // easily communicating requirements.
 
+// TODO: we should communicate errors ('read past end of data') vs empty strings
 static QByteArray readOscString(const QByteArray &data, quint32 &pos)
 {
     QByteArray re;
@@ -96,7 +97,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     for (int i = 1; i < typeTagString.size(); ++i) {
         char typeTag = typeTagString.at(i);
         if (typeTag == 's') { // osc-string
-            // no length check here, readOscString is smart
+            // TODO: length check should be part of readOscString
             QByteArray aString = readOscString(data, parsedBytes);
             arguments.append(aString);
         } else if (typeTag == 'i') { // int32
