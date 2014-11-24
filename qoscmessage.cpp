@@ -76,7 +76,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
 
     // "An OSC message consists of an OSC Address Pattern"
     QByteArray addressPattern = readOscString(data, parsedBytes);
-    if (addressPattern.size() == 0 || parsedBytes >= data.size())
+    if (addressPattern.size() == 0 || parsedBytes >= (quint32)data.size())
         return;
 
     // "followed by an OSC Type Tag String"
@@ -88,7 +88,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     //
     // (although, the editor notes one may question how exactly the hell one is
     // supposed to be robust when the behaviour is unspecified.)
-    if (typeTagString.size() == 0 || typeTagString.at(0) != ',' || parsedBytes >= data.size())
+    if (typeTagString.size() == 0 || typeTagString.at(0) != ',' || parsedBytes >= (quint32)data.size())
         return;
 
     QList<QVariant> arguments;
@@ -101,7 +101,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
             QByteArray aString = readOscString(data, parsedBytes);
             arguments.append(aString);
         } else if (typeTag == 'i') { // int32
-            if (data.length() - parsedBytes < sizeof(quint32))
+            if (parsedBytes > (quint32)data.size() || data.size() - parsedBytes < sizeof(quint32))
                 return;
 
             quint32 anInt = qFromBigEndian<quint32>((const uchar*)data.constData() + parsedBytes);
@@ -110,7 +110,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
             // TODO: is int32 in OSC signed, or unsigned?
             arguments.append((int)anInt);
         } else if (typeTag == 'f') { // float32
-            if (data.length() - parsedBytes < sizeof(quint32))
+            if (parsedBytes > (quint32)data.size() || data.size() - parsedBytes < sizeof(quint32))
                 return;
 
             Q_STATIC_ASSERT(sizeof(float) == sizeof(quint32));
