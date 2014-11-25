@@ -47,7 +47,7 @@ Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
 Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
 QTuioHandler::QTuioHandler()
-    : m_device(new QTouchDevice) // TODO: leaked
+    : m_device(new QTouchDevice)
 {
     m_device->setName("TUIO"); // TODO: multiple based on SOURCE?
     m_device->setType(QTouchDevice::TouchScreen);
@@ -67,6 +67,7 @@ QTuioHandler::QTuioHandler()
 
 QTuioHandler::~QTuioHandler()
 {
+    delete m_device;
 }
 
 void QTuioHandler::processPackets()
