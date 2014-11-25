@@ -147,7 +147,7 @@ void QTuioHandler::process2DCurSource(const QOscMessage &message)
 void QTuioHandler::process2DCurAlive(const QOscMessage &message)
 {
     QList<QVariant> arguments = message.arguments();
-    if (arguments.count() < 1) {
+    if (arguments.count() < 2) {
         qWarning() << "Ignoring malformed TUIO alive message: " << arguments.count();
         return;
     }
@@ -196,7 +196,7 @@ void QTuioHandler::process2DCurAlive(const QOscMessage &message)
 void QTuioHandler::process2DCurSet(const QOscMessage &message)
 {
     QList<QVariant> arguments = message.arguments();
-    if (arguments.count() < 6) {
+    if (arguments.count() < 7) {
         qWarning() << "Ignoring malformed TUIO set message with too few arguments: " << arguments.count();
         return;
     }
