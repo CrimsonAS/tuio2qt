@@ -26,9 +26,9 @@ Run your application with -plugin TuioTouch, e.g.
 Or make sure the plugin is loaded using the QT_QPA_GENERIC_PLUGINS environment
 variable.
 
-Right now, you must direct TUIO packets to port 40001. It'll be optional
-eventually (patches welcome), but I wanted a default, and this one happens to
-suit me well.
+Right now, you must direct TUIO packets to the IP of the machine the application
+is running on, protocol UDP, port 40001. It'll be optional eventually (patches
+welcome), but I wanted a default, and this one happens to suit me well.
 
 ## Further work
 
