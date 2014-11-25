@@ -188,6 +188,9 @@ void QTuioHandler::process2DCurAlive(const QOscMessage &message)
     // deadCursors should be cleared from the last FSEQ now
     m_deadCursors.reserve(oldActiveCursors.size());
 
+    // TODO: there could be an issue of resource exhaustion here if FSEQ isn't
+    // sent in a timely fashion. we should probably track message counts and
+    // force-flush if we get too many built up.
     while (it != oldActiveCursors.constEnd()) {
         m_deadCursors.append(it.value());
         ++it;
