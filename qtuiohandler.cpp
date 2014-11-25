@@ -184,7 +184,10 @@ void QTuioHandler::process2DCurAlive(const QOscMessage &message)
 
     // anything left is dead now
     QMap<int, QTuioCursor>::ConstIterator it = oldActiveCursors.constBegin();
+
+    // deadCursors should be cleared from the last FSEQ now
     m_deadCursors.reserve(oldActiveCursors.size());
+
     while (it != oldActiveCursors.constEnd()) {
         m_deadCursors.append(it.value());
         ++it;
