@@ -62,9 +62,8 @@ QOscBundle::QOscBundle(const QByteArray &data)
     quint32 parsedBytes = 0;
 
     // "An OSC Bundle consists of the OSC-string "#bundle""
-    QByteArray identifier = qt_readOscString(data, parsedBytes);
-
-    if (identifier != "#bundle")
+    QByteArray identifier;
+    if (!qt_readOscString(data, identifier, parsedBytes) || identifier != "#bundle")
         return;
 
     // "followed by an OSC Time
