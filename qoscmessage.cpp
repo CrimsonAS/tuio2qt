@@ -70,7 +70,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     //
     // (although, the editor notes one may question how exactly the hell one is
     // supposed to be robust when the behaviour is unspecified.)
-    if (typeTagString.size() == 0 || typeTagString.at(0) != ',' || parsedBytes >= (quint32)data.size())
+    if (typeTagString.size() == 0 || typeTagString.at(0) != ',')
         return;
 
     QList<QVariant> arguments;
