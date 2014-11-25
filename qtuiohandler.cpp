@@ -148,10 +148,6 @@ void QTuioHandler::process2DCurSource(const QOscMessage &message)
 void QTuioHandler::process2DCurAlive(const QOscMessage &message)
 {
     QList<QVariant> arguments = message.arguments();
-    if (arguments.count() < 2) {
-        qWarning() << "Ignoring malformed TUIO alive message: " << arguments.count();
-        return;
-    }
 
     // delta the notified cursors that are active, against the ones we already
     // know of.
