@@ -37,6 +37,7 @@
 #include <QLoggingCategory>
 
 #include "qoscbundle_p.h"
+#include "qtuio_p.h"
 
 Q_LOGGING_CATEGORY(lcTuioBundle, "qt.qpa.tuio.bundle")
 
@@ -61,15 +62,10 @@ QOscBundle::QOscBundle(const QByteArray &data)
     quint32 parsedBytes = 0;
 
     // "An OSC Bundle consists of the OSC-string "#bundle""
+    QByteArray identifier = qt_readOscString(data, parsedBytes);
 
-    // OSC-strings are null terminated.
-    QByteArray bundleIdentifier = QByteArray("#bundle\0", 8);
-
-    // TODO: use readOscString here too
-    if (!data.startsWith(bundleIdentifier))
+    if (identifier != "#bundle")
         return;
-
-    parsedBytes += bundleIdentifier.size() + (bundleIdentifier.size() % sizeof(quint32));
 
     // "followed by an OSC Time
     // Tag, followed by zero or more OSC Bundle Elements. The OSC-timetag is a
@@ -138,6 +134,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
         //
         // we're not dealing with a packet here, but the same trick works just
         // the same.
+        QByteArray bundleIdentifier = QByteArray("#bundle\0",  8);
         if (subdata.startsWith('/')) {
             // starts with / => address pattern => start of a message
             QOscMessage subMessage(subdata);

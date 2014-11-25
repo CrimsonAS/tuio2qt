@@ -39,6 +39,7 @@
 #include <QLoggingCategory>
 
 #include "qoscmessage_p.h"
+#include "qtuio_p.h"
 
 Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 
@@ -47,27 +48,6 @@ Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 // Snippets of this specification have been pasted into the source as a means of
 // easily communicating requirements.
 
-// TODO: we should communicate errors ('read past end of data') vs empty strings
-static QByteArray readOscString(const QByteArray &data, quint32 &pos)
-{
-    QByteArray re;
-    int end = data.indexOf('\0', pos);
-    if (end < 0) {
-        pos = data.size();
-        return re;
-    }
-
-    re = data.mid(pos, end - pos);
-
-    // Skip additional NULL bytes at the end of the string to make sure the
-    // total number of bits a multiple of 32 bits ("OSC-string" in the
-    // specification).
-    end += 4 - ((end - pos) % 4);
-
-    pos = end;
-    return re;
-}
-
 QOscMessage::QOscMessage(const QByteArray &data)
     : m_isValid(false)
 {
@@ -75,12 +55,12 @@ QOscMessage::QOscMessage(const QByteArray &data)
     quint32 parsedBytes = 0;
 
     // "An OSC message consists of an OSC Address Pattern"
-    QByteArray addressPattern = readOscString(data, parsedBytes);
+    QByteArray addressPattern = qt_readOscString(data, parsedBytes);
     if (addressPattern.size() == 0 || parsedBytes >= (quint32)data.size())
         return;
 
     // "followed by an OSC Type Tag String"
-    QByteArray typeTagString = readOscString(data, parsedBytes);
+    QByteArray typeTagString = qt_readOscString(data, parsedBytes);
 
     // "Note: some older implementations of OSC may omit the OSC Type Tag string.
     // Until all such implementations are updated, OSC implementations should be
@@ -97,8 +77,8 @@ QOscMessage::QOscMessage(const QByteArray &data)
     for (int i = 1; i < typeTagString.size(); ++i) {
         char typeTag = typeTagString.at(i);
         if (typeTag == 's') { // osc-string
-            // TODO: length check should be part of readOscString
-            QByteArray aString = readOscString(data, parsedBytes);
+            // TODO: length check should be part of qt_readOscString
+            QByteArray aString = qt_readOscString(data, parsedBytes);
             arguments.append(aString);
         } else if (typeTag == 'i') { // int32
             if (parsedBytes > (quint32)data.size() || data.size() - parsedBytes < sizeof(quint32))
