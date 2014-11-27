@@ -27,7 +27,7 @@ Or make sure the plugin is loaded using the QT_QPA_GENERIC_PLUGINS environment
 variable.
 
 By default, you must direct TUIO packets to the IP of the machine the application
-is running on, protocol UDP, port 3333. If you want to customise the port, you
+is running on, protocol UDP, port 3333. If you want to customize the port, you
 may provide a port number like this:
 
 `qmlscene foo.qml -plugin TuioTouch:udp=3333`

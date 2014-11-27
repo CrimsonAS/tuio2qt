@@ -57,7 +57,7 @@ QOscBundle::QOscBundle(const QByteArray &data)
     // 23 62 75 6e 64 6c 65 00 // OSC string bundle identifier
     // 00 00 00 00 00 00 00 01 // osc time-tag, "immediately"
     // 00 00 00 30 // element length
-    //      => message or bundle(s), preceeded by length each time
+    //      => message or bundle(s), preceded by length each time
     qCDebug(lcTuioBundle) << data.toHex();
     quint32 parsedBytes = 0;
 

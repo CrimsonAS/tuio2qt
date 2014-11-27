@@ -69,7 +69,7 @@ QOscMessage::QOscMessage(const QByteArray &data)
     // robust in the case of a missing OSC Type Tag String."
     //
     // (although, the editor notes one may question how exactly the hell one is
-    // supposed to be robust when the behaviour is unspecified.)
+    // supposed to be robust when the behavior is unspecified.)
     if (typeTagString.size() == 0 || typeTagString.at(0) != ',')
         return;
 
