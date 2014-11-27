@@ -41,7 +41,5 @@ At present, UDP is the only supported transport mechanism.
     * We'd need to somehow not rely on FSEQ for removing touchpoints, else our
       currently minor memory exhaustion problem could become a real issue
 * Support X/Y axis inversion (similar to evdevtouch)
-* Support multiple handlers (multiple ports/addresses/whatever at a time)
-    * Parse specification and create handlers as appropriate?
 * Support TCP transports?
 * Submit for merge in 5.5 :)
