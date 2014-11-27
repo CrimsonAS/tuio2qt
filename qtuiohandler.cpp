@@ -50,7 +50,7 @@ QTuioHandler::QTuioHandler(const QString &specification)
     : m_device(new QTouchDevice) // not leaked, QTouchDevice cleans up registered devices itself
 {
     QStringList args = specification.split(':');
-    int portNumber = 40001;
+    int portNumber = 3333;
 
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i).startsWith("udp=")) {
