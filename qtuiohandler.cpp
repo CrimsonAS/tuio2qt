@@ -46,9 +46,23 @@
 Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
 Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
-QTuioHandler::QTuioHandler()
+QTuioHandler::QTuioHandler(const QString &specification)
     : m_device(new QTouchDevice) // not leaked, QTouchDevice cleans up registered devices itself
 {
+    QStringList args = specification.split(':');
+    int portNumber = 40001;
+
+    for (int i = 0; i < args.count(); ++i) {
+        if (args.at(i).startsWith("udp=")) {
+            QString portString = args.at(i).section('=', 1, 1);
+            portNumber = portString.toInt();
+        } else if (args.at(i).startsWith("tcp=")) {
+            QString portString = args.at(i).section('=', 1, 1);
+            portNumber = portString.toInt();
+            qWarning() << "TCP is not yet supported. Falling back to UDP on " << portNumber;
+        }
+    }
+
     m_device->setName("TUIO"); // TODO: multiple based on SOURCE?
     m_device->setType(QTouchDevice::TouchScreen);
     m_device->setCapabilities(QTouchDevice::Position |
@@ -57,7 +71,7 @@ QTuioHandler::QTuioHandler()
                               QTouchDevice::NormalizedPosition);
     QWindowSystemInterface::registerTouchDevice(m_device);
 
-    if (!m_socket.bind(QHostAddress::Any, 40001)) {
+    if (!m_socket.bind(QHostAddress::Any, portNumber)) {
         qWarning() << "Failed to bind TUIO socket: " << m_socket.errorString();
         return;
     }

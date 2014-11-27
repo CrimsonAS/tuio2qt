@@ -49,7 +49,7 @@ class QTuioHandler : public QObject
     Q_OBJECT
 
 public:
-    explicit QTuioHandler();
+    explicit QTuioHandler(const QString &specification);
     virtual ~QTuioHandler();
 
 private slots:
