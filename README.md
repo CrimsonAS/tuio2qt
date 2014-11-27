@@ -45,6 +45,12 @@ For example:
 
 Would invert the X and Y coordinates of all input coming in on port 4000.
 
+You can also rotate the coordinates directly, using the rotate option:
+
+`qmlscene foo.qml -plugin TuioTouch:udp=4000:rotate=180`
+
+Supported rotations are 90, 180, and 270.
+
 ## Further work
 
 * Support other profiles (we implement 2Dcur, we want 2Dobj, 2Dblb?)

@@ -51,6 +51,7 @@ QTuioHandler::QTuioHandler(const QString &specification)
 {
     QStringList args = specification.split(':');
     int portNumber = 3333;
+    int rotationAngle = 0;
     bool invertx = false;
     bool inverty = false;
 
@@ -66,8 +67,22 @@ QTuioHandler::QTuioHandler(const QString &specification)
             invertx = true;
         } else if (args.at(i) == "inverty") {
             inverty = true;
+        } else if (args.at(i).startsWith("rotate=")) {
+            QString rotateArg = args.at(i).section('=', 1, 1);
+            int argValue = rotateArg.toInt();
+            switch (argValue) {
+            case 90:
+            case 180:
+            case 270:
+                rotationAngle = argValue;
+            default:
+                break;
+            }
         }
     }
+
+    if (rotationAngle)
+        m_transform = QTransform::fromTranslate(0.5, 0.5).rotate(rotationAngle).translate(-0.5, -0.5);
 
     if (invertx)
         m_transform *= QTransform::fromTranslate(0.5, 0.5).scale(-1.0, 1.0).translate(-0.5, -0.5);
