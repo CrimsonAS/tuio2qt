@@ -34,12 +34,22 @@ may provide a port number like this:
 
 At present, UDP is the only supported transport mechanism.
 
+## Advanced use
+
+If you have the need to invert the X/Y axis, you can do so, by adding an
+additional option when loading the plugin.
+
+For example:
+
+`qmlscene foo.qml -plugin TuioTouch:udp=4000:invertx:inverty`
+
+Would invert the X and Y coordinates of all input coming in on port 4000.
+
 ## Further work
 
 * Support other profiles (we implement 2Dcur, we want 2Dobj, 2Dblb?)
 * Support multiple simultaneous sources, generating distinct QTouchEvents
     * We'd need to somehow not rely on FSEQ for removing touchpoints, else our
       currently minor memory exhaustion problem could become a real issue
-* Support X/Y axis inversion (similar to evdevtouch)
 * Support TCP transports?
 * Submit for merge in 5.5 :)

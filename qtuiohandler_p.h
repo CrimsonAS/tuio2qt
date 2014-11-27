@@ -39,6 +39,9 @@
 #include <QMap>
 #include <QUdpSocket>
 #include <QVector>
+#include <QTransform>
+
+#include <qpa/qwindowsysteminterface.h>
 
 class QTouchDevice;
 class QOscMessage;
@@ -60,10 +63,13 @@ private slots:
     void process2DCurFseq(const QOscMessage &message);
 
 private:
+    QWindowSystemInterface::TouchPoint cursorToTouchPoint(const QTuioCursor &tc, QWindow *win);
+
     QTouchDevice *m_device;
     QUdpSocket m_socket;
     QMap<int, QTuioCursor> m_activeCursors;
     QVector<QTuioCursor> m_deadCursors;
+    QTransform m_transform;
 };
 
 #endif // QTUIOHANDLER_P_H

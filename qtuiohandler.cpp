@@ -51,6 +51,8 @@ QTuioHandler::QTuioHandler(const QString &specification)
 {
     QStringList args = specification.split(':');
     int portNumber = 3333;
+    bool invertx = false;
+    bool inverty = false;
 
     for (int i = 0; i < args.count(); ++i) {
         if (args.at(i).startsWith("udp=")) {
@@ -60,8 +62,18 @@ QTuioHandler::QTuioHandler(const QString &specification)
             QString portString = args.at(i).section('=', 1, 1);
             portNumber = portString.toInt();
             qWarning() << "TCP is not yet supported. Falling back to UDP on " << portNumber;
+        } else if (args.at(i) == "invertx") {
+            invertx = true;
+        } else if (args.at(i) == "inverty") {
+            inverty = true;
         }
     }
+
+    if (invertx)
+        m_transform *= QTransform::fromTranslate(0.5, 0.5).scale(-1.0, 1.0).translate(-0.5, -0.5);
+
+    if (inverty)
+        m_transform *= QTransform::fromTranslate(0.5, 0.5).scale(1.0, -1.0).translate(-0.5, -0.5);
 
     m_device->setName("TUIO"); // TODO: multiple based on SOURCE?
     m_device->setType(QTouchDevice::TouchScreen);
@@ -250,15 +262,18 @@ void QTuioHandler::process2DCurSet(const QOscMessage &message)
     cur.setAcceleration(acceleration);
 }
 
-static QWindowSystemInterface::TouchPoint cursorToTouchPoint(const QTuioCursor &tc, QWindow *win)
+QWindowSystemInterface::TouchPoint QTuioHandler::cursorToTouchPoint(const QTuioCursor &tc, QWindow *win)
 {
     QWindowSystemInterface::TouchPoint tp;
     tp.id = tc.id();
     tp.pressure = 1.0f;
 
     tp.normalPosition = QPointF(tc.x(), tc.y());
-    tp.state = tc.state();
 
+    if (!m_transform.isIdentity())
+        tp.normalPosition = m_transform.map(tp.normalPosition);
+
+    tp.state = tc.state();
     tp.area = QRectF(0, 0, 1, 1);
 
     // we map the touch to the size of the window. we do this, because frankly,
@@ -268,7 +283,7 @@ static QWindowSystemInterface::TouchPoint cursorToTouchPoint(const QTuioCursor &
     //
     // in the future, it might make sense to make this choice optional,
     // dependent on the spec.
-    QPointF relPos = QPointF(win->size().width() * tc.x(), win->size().height() * tc.y());
+    QPointF relPos = QPointF(win->size().width() * tp.normalPosition.x(), win->size().height() * tp.normalPosition.y());
     QPointF delta = relPos - relPos.toPoint();
     tp.area.moveCenter(win->mapToGlobal(relPos.toPoint()) + delta);
     tp.velocity = QVector2D(win->size().width() * tc.vx(), win->size().height() * tc.vy());
