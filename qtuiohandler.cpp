@@ -268,7 +268,7 @@ void QTuioHandler::process2DCurSet(const QOscMessage &message)
         return;
     }
 
-    qDebug(lcTuioSet) << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
+    qCDebug(lcTuioSet) << "Processing SET for " << cursorId << " x: " << x << y << vx << vy << acceleration;
     QTuioCursor &cur = *it;
     cur.setX(x);
     cur.setY(y);
