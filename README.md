@@ -58,4 +58,3 @@ Supported rotations are 90, 180, and 270.
     * We'd need to somehow not rely on FSEQ for removing touchpoints, else our
       currently minor memory exhaustion problem could become a real issue
 * Support TCP transports?
-* Submit for merge in 5.5 :)
