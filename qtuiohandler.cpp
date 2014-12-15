@@ -179,7 +179,7 @@ void QTuioHandler::process2DCurSource(const QOscMessage &message)
         return;
     }
 
-    if (arguments.at(1).type() != QVariant::ByteArray) {
+    if (QMetaType::Type(arguments.at(1).type()) != QMetaType::QByteArray) {
         qWarning() << "Ignoring malformed TUIO source message (bad argument type)";
         return;
     }
@@ -201,7 +201,7 @@ void QTuioHandler::process2DCurAlive(const QOscMessage &message)
     QMap<int, QTuioCursor> newActiveCursors;
 
     for (int i = 1; i < arguments.count(); ++i) {
-        if (arguments.at(i).type() != QVariant::Int) {
+        if (QMetaType::Type(arguments.at(i).type()) != QMetaType::Int) {
             qWarning() << "Ignoring malformed TUIO alive message (bad argument on position" << i << arguments << ")";
             return;
         }
@@ -246,12 +246,12 @@ void QTuioHandler::process2DCurSet(const QOscMessage &message)
         return;
     }
 
-    if (arguments.at(1).type() != QVariant::Int ||
-        arguments.at(2).type() != QMetaType::Float ||
-        arguments.at(3).type() != QMetaType::Float ||
-        arguments.at(4).type() != QMetaType::Float ||
-        arguments.at(5).type() != QMetaType::Float ||
-        arguments.at(6).type() != QMetaType::Float
+    if (QMetaType::Type(arguments.at(1).type()) != QMetaType::Int   ||
+        QMetaType::Type(arguments.at(2).type()) != QMetaType::Float ||
+        QMetaType::Type(arguments.at(3).type()) != QMetaType::Float ||
+        QMetaType::Type(arguments.at(4).type()) != QMetaType::Float ||
+        QMetaType::Type(arguments.at(5).type()) != QMetaType::Float ||
+        QMetaType::Type(arguments.at(6).type()) != QMetaType::Float
        ) {
         qWarning() << "Ignoring malformed TUIO set message with bad types: " << arguments;
         return;
