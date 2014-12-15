@@ -41,6 +41,8 @@
 #include "qoscmessage_p.h"
 #include "qtuio_p.h"
 
+QT_BEGIN_NAMESPACE
+
 Q_LOGGING_CATEGORY(lcTuioMessage, "qt.qpa.tuio.message")
 
 // TUIO packets are transmitted using the OSC protocol, located at:
@@ -132,4 +134,5 @@ QList<QVariant> QOscMessage::arguments() const
     return m_arguments;
 }
 
+QT_END_NAMESPACE
 

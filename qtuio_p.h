@@ -35,6 +35,8 @@
 #ifndef QTUIO_P_H
 #define QTUIO_P_H
 
+QT_BEGIN_NAMESPACE
+
 inline bool qt_readOscString(const QByteArray &source, QByteArray &dest, quint32 &pos)
 {
     int end = source.indexOf('\0', pos);
@@ -55,5 +57,6 @@ inline bool qt_readOscString(const QByteArray &source, QByteArray &dest, quint32
     return true;
 }
 
+QT_END_NAMESPACE
 
 #endif

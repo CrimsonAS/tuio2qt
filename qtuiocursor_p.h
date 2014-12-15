@@ -37,6 +37,8 @@
 
 #include <Qt>
 
+QT_BEGIN_NAMESPACE
+
 class QTuioCursor
 {
 public:
@@ -94,5 +96,7 @@ private:
     float m_acceleration;
     Qt::TouchPointState m_state;
 };
+
+QT_END_NAMESPACE
 
 #endif // QTUIOCURSOR_P_H

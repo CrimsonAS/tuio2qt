@@ -35,6 +35,8 @@
 #ifndef QOSCMESSAGE_P_H
 #define QOSCMESSAGE_P_H
 
+QT_BEGIN_NAMESPACE
+
 class QOscMessage
 {
 public:
@@ -49,5 +51,7 @@ private:
     QByteArray m_addressPattern;
     QList<QVariant> m_arguments;
 };
+
+QT_END_NAMESPACE
 
 #endif

@@ -43,6 +43,8 @@
 #include "qtuiohandler_p.h"
 #include "qoscbundle_p.h"
 
+QT_BEGIN_NAMESPACE
+
 Q_LOGGING_CATEGORY(lcTuioSource, "qt.qpa.tuio.source")
 Q_LOGGING_CATEGORY(lcTuioSet, "qt.qpa.tuio.set")
 
@@ -331,4 +333,5 @@ void QTuioHandler::process2DCurFseq(const QOscMessage &message)
     m_deadCursors.clear();
 }
 
+QT_END_NAMESPACE
 

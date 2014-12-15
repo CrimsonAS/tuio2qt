@@ -43,6 +43,8 @@
 
 #include <qpa/qwindowsysteminterface.h>
 
+QT_BEGIN_NAMESPACE
+
 class QTouchDevice;
 class QOscMessage;
 class QTuioCursor;
@@ -71,5 +73,7 @@ private:
     QVector<QTuioCursor> m_deadCursors;
     QTransform m_transform;
 };
+
+QT_END_NAMESPACE
 
 #endif // QTUIOHANDLER_P_H

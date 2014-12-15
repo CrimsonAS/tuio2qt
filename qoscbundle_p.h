@@ -37,6 +37,8 @@
 
 #include "qoscmessage_p.h"
 
+QT_BEGIN_NAMESPACE
+
 class QOscBundle
 {
 public:
@@ -54,5 +56,7 @@ private:
     QList<QOscBundle> m_bundles;
     QList<QOscMessage> m_messages;
 };
+
+QT_END_NAMESPACE
 
 #endif // QOSCBUNDLE_P_H
