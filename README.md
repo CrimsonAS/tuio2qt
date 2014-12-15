@@ -11,12 +11,6 @@ network (implemented here using a UDP transport).
 This repository also includes a simple [OSC](http://opensoundcontrol.org/spec-1_0)
 parser. OSC is the binary format that TUIO uses for over-the-wire communication.
 
-## Building
-
-Make sure you have Qt available (I'd hope this is obvious, but...)
-
-After that, it should be a case of doing `qmake`, `make`, `make install`.
-
 ## Use
 
 Run your application with -plugin TuioTouch, e.g.
