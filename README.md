@@ -2,6 +2,15 @@
 
 ## Introduction
 
+*NOTE*: As of Qt 5.5, this plugin has been integrated with the main Qt codebase,
+(revision 9b1f163ac52ea440e83f16b3906f9b55e21b87be was the code copied)
+and as such, you won't require this plugin. It is kept seperate here as a
+repository for historical purposes (in case anyone is curious about how it
+evolved) and in order to provide a solution for pre-Qt-5.5 users.
+
+If you are interested in contributing, please send changes to the qtbase
+(src/plugins/generic/tuiotouch).
+
 This is a QPA-using plugin (meaning, it uses Qt internals) that provides touch
 events from TUIO-based sources (such as [TUIOPad](https://code.google.com/p/tuiopad/)).
 
